@@ -70,7 +70,9 @@ namespace ImageManagement.Services
             graphics.DrawImage(originalBMP, 0, 0, newWidth, newHeight);
 
             var uniqueFileName = Guid.NewGuid().ToString("N") + file.FileName;
-            var filePath = Path.Combine(_env.WebRootPath, "images", folderName, uniqueFileName);
+            var filePath = Path.Combine(_env.WebRootPath, folderName, uniqueFileName);
+            var folderPath = Path.Combine(_env.WebRootPath, folderName);
+            Directory.CreateDirectory(folderPath);
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
                 newBMP.Save(fileStream, GetImageFormat(Path.GetExtension(file.FileName)));
