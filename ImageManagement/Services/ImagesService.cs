@@ -23,27 +23,66 @@ namespace ImageManagement.Services
         #endregion
 
         #region ImgCrudFunx
-        public async Task<string> SaveImage(IFormFile file, string folderName)
+        /// <summary>
+        /// Saves an image to the specified foldername under root path and returns a unique file name.
+        /// </summary>
+        /// <param name="file">The image to be saved.</param>
+        /// <param name="folderName">The name of folder to place the image in (folder will be created if not yet exists). Default value is 'images'.</param>
+        /// <returns></returns>
+        public async Task<string> SaveImage(IFormFile file, string folderName = "images")
         {
-            return await ResizeImage(file, folderName);
+            if (file != null)
+            {
+                return await ResizeAndUploadImage(file, folderName);
+            }
+            return null;
         }
 
-        public async Task<string> ReplaceImage(string oldFileName, IFormFile newFile, string folderName)
+        /// <summary>
+        /// Deletes former image and replaces it with new image.
+        /// </summary>
+        /// <param name="oldFileName">Name of the former image.</param>
+        /// <param name="newFile">New image</param>
+        /// <param name="folderName">The name of folder where image is in and where new image will be in. Default value is 'images'.</param>
+        /// <returns></returns>
+        public async Task<string> ReplaceImage(string oldFileName, IFormFile newFile, string folderName = "images")
         {
-            await DeleteImage(oldFileName, folderName);
-            return await SaveImage(newFile, folderName);
+            var result = await DeleteImage(oldFileName, folderName);
+            if (result.Success)
+            {
+                return await SaveImage(newFile, folderName);
+            }
+
+            return null;
         }
 
-        public async Task DeleteImage(string oldFileName, string folderName)
+        /// <summary>
+        /// Deletes an image.
+        /// </summary>
+        /// <param name="oldFileName">Name of the image to be deleted.</param>
+        /// <param name="folderName">Name of the folder where image is in. Default value is 'images'.</param>
+        /// <returns></returns>
+        public async Task<ImageResult> DeleteImage(string oldFileName, string folderName = "images")
         {
             await Task.Delay(0);
+            if (string.IsNullOrEmpty(oldFileName))
+            {
+                return ImageResult.Failed;
+            }
+
             string fullPath = Path.Combine(_env.WebRootPath, folderName, oldFileName);
-            if (File.Exists(fullPath)) File.Delete(fullPath);
+            if (File.Exists(fullPath)) 
+            {
+                File.Delete(fullPath);
+                return ImageResult.Successfull;
+            }
+
+            return ImageResult.Failed;
         }
         #endregion
 
         #region HelperFuncs
-        private async Task<string> ResizeImage(IFormFile file, string folderName)
+        private async Task<string> ResizeAndUploadImage(IFormFile file, string folderName)
         {
             await Task.Delay(0);
             Bitmap originalBMP = new Bitmap(file.OpenReadStream());
@@ -101,5 +140,18 @@ namespace ImageManagement.Services
             return ImageFormat.Jpeg;
         }
         #endregion
+
+        public class ImageResult
+        {
+            public static ImageResult Successfull { get; set; } = new ImageResult(true);
+            public static ImageResult Failed { get; set; } = new ImageResult(false);
+
+            public bool Success { get; }
+
+            public ImageResult(bool isSuccess)
+            {
+                Success = isSuccess;
+            }
+        }
     }
 }
