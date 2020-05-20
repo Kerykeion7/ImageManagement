@@ -74,10 +74,9 @@ namespace ImageManagement.Services
             if (File.Exists(fullPath)) 
             {
                 File.Delete(fullPath);
-                return ImageResult.Successfull;
             }
 
-            return ImageResult.Failed;
+            return ImageResult.Successfull;
         }
         #endregion
 
