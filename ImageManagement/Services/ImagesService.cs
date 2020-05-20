@@ -29,13 +29,13 @@ namespace ImageManagement.Services
         /// <param name="file">The image to be saved.</param>
         /// <param name="folderName">The name of folder to place the image in (folder will be created if not yet exists). Default value is 'images'.</param>
         /// <returns></returns>
-        public async Task<string> SaveImage(IFormFile file, string folderName = "images")
+        public async Task<ImageResult> SaveImage(IFormFile file, string folderName = "images")
         {
             if (file != null)
             {
                 return await ResizeAndUploadImage(file, folderName);
             }
-            return null;
+            return ImageResult.Failed;
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace ImageManagement.Services
         /// <param name="newFile">New image</param>
         /// <param name="folderName">The name of folder where image is in and where new image will be in. Default value is 'images'.</param>
         /// <returns></returns>
-        public async Task<string> ReplaceImage(string oldFileName, IFormFile newFile, string folderName = "images")
+        public async Task<ImageResult> ReplaceImage(string oldFileName, IFormFile newFile, string folderName = "images")
         {
             var result = await DeleteImage(oldFileName, folderName);
             if (result.Success)
@@ -53,7 +53,7 @@ namespace ImageManagement.Services
                 return await SaveImage(newFile, folderName);
             }
 
-            return null;
+            return ImageResult.Failed;
         }
 
         /// <summary>
@@ -81,10 +81,16 @@ namespace ImageManagement.Services
         }
         #endregion
 
-        #region HelperFuncs
-        private async Task<string> ResizeAndUploadImage(IFormFile file, string folderName)
+        #region HelperFunx
+        private async Task<ImageResult> ResizeAndUploadImage(IFormFile file, string folderName)
         {
             await Task.Delay(0);
+            var fileExtension = Path.GetExtension(file.FileName).Substring(1);
+            if (!AllowedExtensions().Contains(fileExtension.ToLower()))
+            {
+                return ImageResult.Failed;
+            }
+
             Bitmap originalBMP = new Bitmap(file.OpenReadStream());
 
             double origWidth = originalBMP.Width;
@@ -114,44 +120,36 @@ namespace ImageManagement.Services
             Directory.CreateDirectory(folderPath);
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                newBMP.Save(fileStream, GetImageFormat(Path.GetExtension(file.FileName)));
+                newBMP.Save(fileStream, GetImageFormat(fileExtension));
             }
 
             originalBMP.Dispose();
             newBMP.Dispose();
             graphics.Dispose();
 
-            return uniqueFileName;
+            return new ImageResult(true) { ImgUrl = uniqueFileName};
         }
 
         private ImageFormat GetImageFormat(string extension)
         {
-            switch (extension.ToLower())
+            return (extension.ToLower()) switch
             {
-                case "jpg":
-                    return ImageFormat.Jpeg;
-                case "bmp":
-                    return ImageFormat.Bmp;
-                case "png":
-                    return ImageFormat.Png;
-                default:
-                    break;
-            }
-            return ImageFormat.Jpeg;
+                "jpg" => ImageFormat.Jpeg,
+                "bmp" => ImageFormat.Bmp,
+                "png" => ImageFormat.Png,
+                _ => ImageFormat.Jpeg,
+            };
+        }
+
+        private List<string> AllowedExtensions()
+        {
+            return new List<string>
+            {
+                "jpg",
+                "bmp",
+                "png"
+            };
         }
         #endregion
-
-        public class ImageResult
-        {
-            public static ImageResult Successfull { get; set; } = new ImageResult(true);
-            public static ImageResult Failed { get; set; } = new ImageResult(false);
-
-            public bool Success { get; }
-
-            public ImageResult(bool isSuccess)
-            {
-                Success = isSuccess;
-            }
-        }
     }
 }
