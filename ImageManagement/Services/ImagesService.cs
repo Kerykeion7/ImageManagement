@@ -47,6 +47,8 @@ namespace ImageManagement.Services
         /// <returns></returns>
         public async Task<ImageResult> ReplaceImage(string oldFileName, IFormFile newFile, string folderName = "images")
         {
+            if (!IsAllowedExtension(newFile)) return ImageResult.Failed;
+
             var result = await DeleteImage(oldFileName, folderName);
             if (result.Success)
             {
@@ -84,11 +86,7 @@ namespace ImageManagement.Services
         private async Task<ImageResult> ResizeAndUploadImage(IFormFile file, string folderName)
         {
             await Task.Delay(0);
-            var fileExtension = Path.GetExtension(file.FileName).Substring(1);
-            if (!AllowedExtensions().Contains(fileExtension.ToLower()))
-            {
-                return ImageResult.Failed;
-            }
+            if (!IsAllowedExtension(file)) return ImageResult.Failed;
 
             Bitmap originalBMP = new Bitmap(file.OpenReadStream());
 
@@ -119,7 +117,7 @@ namespace ImageManagement.Services
             Directory.CreateDirectory(folderPath);
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                newBMP.Save(fileStream, GetImageFormat(fileExtension));
+                newBMP.Save(fileStream, GetImageFormat(Path.GetExtension(file.FileName).Substring(1)));
             }
 
             originalBMP.Dispose();
@@ -148,6 +146,12 @@ namespace ImageManagement.Services
                 "bmp",
                 "png"
             };
+        }
+
+        private bool IsAllowedExtension(IFormFile file)
+        {
+            var fileExtension = Path.GetExtension(file.FileName).Substring(1).ToLower();
+            return AllowedExtensions().Contains(fileExtension);
         }
         #endregion
     }
