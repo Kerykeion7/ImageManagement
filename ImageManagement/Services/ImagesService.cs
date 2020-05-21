@@ -78,7 +78,7 @@ namespace ImageManagement.Services
                 File.Delete(fullPath);
             }
 
-            return ImageResult.Successfull;
+            return ImageResult.Successfull();
         }
         #endregion
 
@@ -124,7 +124,7 @@ namespace ImageManagement.Services
             newBMP.Dispose();
             graphics.Dispose();
 
-            return new ImageResult(true) { ImgUrl = uniqueFileName};
+            return ImageResult.Successfull(uniqueFileName);
         }
 
         private ImageFormat GetImageFormat(string extension)

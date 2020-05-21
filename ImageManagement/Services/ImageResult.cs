@@ -6,7 +6,8 @@ namespace ImageManagement.Services
 {
     public class ImageResult
     {
-        public static ImageResult Successfull { get; set; } = new ImageResult(true);
+        public static ImageResult Successfull(string imgUrl = null) => CreateSuccessfullImageResult(imgUrl, true);
+
         public static ImageResult Failed { get; set; } = new ImageResult(false);
 
         public bool Success { get; }
@@ -15,6 +16,14 @@ namespace ImageManagement.Services
         public ImageResult(bool isSuccess)
         {
             Success = isSuccess;
+        }
+
+        private static ImageResult CreateSuccessfullImageResult(string imgUrl, bool success)
+        {
+            return new ImageResult(success)
+            {
+                ImgUrl = imgUrl
+            };
         }
     }
 }
