@@ -35,7 +35,7 @@ namespace ImageManagement.Services
             {
                 return await ResizeAndUploadImage(file, folderName);
             }
-            return ImageResult.Failed;
+            return ImageResult.Failed(new UploadError { Description = "Please provide a jpg, png, or bmp file."});
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace ImageManagement.Services
         /// <returns></returns>
         public async Task<ImageResult> ReplaceImage(string oldFileName, IFormFile newFile, string folderName = "images")
         {
-            if (!IsAllowedExtension(newFile)) return ImageResult.Failed;
+            if (!IsAllowedExtension(newFile)) return ImageResult.Failed(new UploadError { Description = "Only jpg, png, and bmp extensions are allowed." });
 
             var result = await DeleteImage(oldFileName, folderName);
             if (result.Success)
@@ -55,7 +55,7 @@ namespace ImageManagement.Services
                 return await SaveImage(newFile, folderName);
             }
 
-            return ImageResult.Failed;
+            return result;
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace ImageManagement.Services
             await Task.Delay(0);
             if (string.IsNullOrEmpty(oldFileName))
             {
-                return ImageResult.Failed;
+                return ImageResult.Failed(new UploadError { Description = "Could not find to file to be delet"});
             }
 
             string fullPath = Path.Combine(_env.WebRootPath, folderName, oldFileName);
@@ -78,7 +78,7 @@ namespace ImageManagement.Services
                 File.Delete(fullPath);
             }
 
-            return ImageResult.Successfull();
+            return ImageResult.Successful();
         }
         #endregion
 
@@ -86,7 +86,7 @@ namespace ImageManagement.Services
         private async Task<ImageResult> ResizeAndUploadImage(IFormFile file, string folderName)
         {
             await Task.Delay(0);
-            if (!IsAllowedExtension(file)) return ImageResult.Failed;
+            if (!IsAllowedExtension(file)) return ImageResult.Failed(new UploadError { Description = "Only jpg, png, and bmp extensions are allowed."});
 
             Bitmap originalBMP = new Bitmap(file.OpenReadStream());
 
@@ -124,7 +124,7 @@ namespace ImageManagement.Services
             newBMP.Dispose();
             graphics.Dispose();
 
-            return ImageResult.Successfull(uniqueFileName);
+            return ImageResult.Successful(uniqueFileName);
         }
 
         private ImageFormat GetImageFormat(string extension)
